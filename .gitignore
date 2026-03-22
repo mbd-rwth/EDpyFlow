@@ -1,0 +1,7 @@
+*.sif
+
+# Climate data (DWD license — not redistributable)
+data/locations/*.mos
+
+# Editor
+.vscode/
