@@ -7,7 +7,7 @@ data/locations/*.mos
 .vscode/
 
 # Runs — ignore all except EDS_default; within that, skip large generated files
-runs/
+runs/*
 !runs/EDS_default/
 runs/EDS_default/simulation_input/
 runs/EDS_default/simulation_output/

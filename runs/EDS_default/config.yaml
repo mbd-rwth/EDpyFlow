@@ -1,0 +1,52 @@
+# EDpyFlow configuration
+# All pipeline parameters are configured here.
+
+# Name of this run. All outputs will be written to runs/{run_name}/.
+# Change this for each new run to avoid overwriting previous results.
+run_name: EDS_default
+
+
+# Locations and their corresponding weather files (.mos format).
+# Weather files must be placed in data/locations/.
+locations:
+  berlin: berlin.mos
+  hamburg: hamburg.mos
+  dusseldorf: dusseldorf.mos
+  munich: munich.mos
+  frankfurt: frankfurt.mos
+  leipzig: leipzig.mos
+
+# Refurbishment levels applied to all building configurations.
+refurbishment_status:
+  - standard
+  - retrofit
+  - adv_retrofit
+
+# Latin Hypercube Sampling parameters.
+sampling:
+  n_per_type: 300   # number of samples per building typology (MFH, SFH, TH, AB)
+  seed: 123
+  criterion: maximin
+
+# Number of RC elements in the thermal model. 
+# This determines the complexity of the building thermal model used in OpenModelica simulations.
+num_elements: 2
+
+# OpenModelica simulation settings.
+# keep_raw_output: if true, raw per-building files from OpenModelica are retained in
+# simulation_input/residentials_{location}/Outputs/. WARNING: requires significant
+# additional disk space.
+simulation:
+  duration_days: 365
+  timestep_hours: 1
+  keep_raw_output: false
+
+# XGBoost surrogate model hyperparameters and data split ratios.
+surrogate:
+  model_name: xgb_surrogate
+  n_estimators: 12000
+  learning_rate: 0.05
+  early_stopping_rounds: 50
+  random_state: 42
+  test_size: 0.15
+  val_size: 0.15
