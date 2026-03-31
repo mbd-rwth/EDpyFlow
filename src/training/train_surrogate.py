@@ -71,3 +71,7 @@ print(f"R²:              {metrics.r2_score(y_test, y_pred):.4f}")
 os.makedirs(model_dir, exist_ok=True)
 model.save_model(os.path.join(model_dir, f"{model_name}.json"))
 print(f"Saved model to {model_dir}/{model_name}.json")
+
+test_set_path = os.path.join(run_dir, "synthetic_dataset", "test_set.csv")
+df.loc[X_test.index].to_csv(test_set_path)
+print(f"Saved test set  to {test_set_path}")
