@@ -7,6 +7,8 @@
 
 In its default configuration, the pipeline covers four TABULA DE building typologies (SFH, TH, MFH, AB), six German cities, and three refurbishment levels, yielding 21,600 building configurations per fidelity level. The resulting trained models constitute the EDSurrogate model family (EDSurrogate-2el and EDSurrogate-4el).
 
+EDpyFlow also ships an interactive **scenario analysis dashboard** for municipal heat planning, enabling planners to explore refurbishment upgrade strategies across a building stock and compare scenarios side by side — powered by the trained surrogate model.
+
 ## Pipeline
 
 The pipeline proceeds in five stages. Each stage is self-contained and uses file-based data exchange. The pipeline can be entered or interrupted at any point without reprocessing upstream results.
@@ -18,6 +20,25 @@ The pipeline proceeds in five stages. Each stage is self-contained and uses file
 | 3 | `src/simulation/run_simulations.py` | Runs annual energy simulations in OpenModelica |
 | 4 | `src/data_prep/generate_dataset.py` | Assembles simulation results into a dataset |
 | 5 | `src/training/train_surrogate.py` | Trains an XGBoost surrogate model |
+
+## Scenario Analysis Dashboard
+
+EDpyFlow includes an interactive scenario analysis tool for municipal heat planning, built on top of the trained surrogate model. It allows users to explore and compare refurbishment upgrade strategies across a building stock — filtering by city, building type, and floor area, and ranking buildings by absolute savings or savings per m².
+
+**Try it:** [EDpyFlow on Hugging Face Spaces](https://huggingface.co/spaces/nazbn/EDpyFlow)
+
+Two analysis modes are available:
+
+- **Single Scenario** — apply an upgrade path (e.g. standard → advanced retrofit) to a filtered stock and visualise energy savings by city, building type, and construction decade, along with a cumulative savings curve
+- **Scenario Comparison** — run two scenarios side by side (A vs B) with independent filters and upgrade paths
+
+The dashboard loads any trained model from a run directory and uses the held-out test set saved by `train_surrogate.py` as the default building stock. A custom CSV can also be uploaded.
+
+To run locally:
+
+```bash
+streamlit run dashboard/app.py
+```
 
 ## Requirements
 
@@ -56,7 +77,7 @@ Run a single step:
 
 ```bash
 python EDpyFlow.py --step sampling
-python EDpyFlow.py --step teaser
+python EDpyFlow.py --step modeling
 python EDpyFlow.py --step simulate
 python EDpyFlow.py --step dataset
 python EDpyFlow.py --step surrogate

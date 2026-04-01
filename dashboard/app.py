@@ -24,8 +24,8 @@ UPGRADE_MAP = {
 }
 UPGRADE_PATHS = list(UPGRADE_MAP.keys())
 
-SCENARIO_A_COLOR = "#ec4899"  # pink
-SCENARIO_B_COLOR = "#9333ea"  # purple
+SCENARIO_A_COLOR = "#1FA386"  # green
+SCENARIO_B_COLOR = "#6E22B8"  # purple
 BASELINE_COLOR   = "#94a3b8"  # slate
 
 BUILDING_TYPE_LABELS = {
@@ -47,6 +47,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+st.html("<style>section[data-testid='stSidebar'], .main { zoom: 0.9; } .block-container { padding-top: 3.5rem; }</style>")
 st.title("EDpyFlow — Heat Demand Scenario Analysis")
 st.caption(
     "Compare refurbishment upgrade scenarios for residential building stocks, "
@@ -328,30 +329,33 @@ def scenario_controls(label: str, default_path: str, key: str) -> tuple:
     )
     from_level, to_level = UPGRADE_MAP[path]
 
-    cov_label = st.radio(
-        "Coverage",
-        ["All eligible buildings", "Top %", "Top N"],
-        key=f"{key}_cov_type",
-        horizontal=True,
-    )
+    col_cov, _, col_rank = st.columns([1.2, 0.15, 1])
 
-    coverage_type  = "all"
-    coverage_value = None
-    if cov_label == "Top %":
-        coverage_type  = "top_pct"
-        coverage_value = st.slider("% of eligible buildings to upgrade", 1, 100, 30, key=f"{key}_pct")
-    elif cov_label == "Top N":
-        coverage_type  = "top_n"
-        coverage_value = st.number_input(
-            "Number of buildings to upgrade", min_value=1, value=20, step=5, key=f"{key}_n"
+    with col_cov:
+        cov_label = st.radio(
+            "Coverage",
+            ["All eligible buildings", "Top %", "Top N"],
+            key=f"{key}_cov_type",
+            horizontal=True,
         )
+        coverage_type  = "all"
+        coverage_value = None
+        if cov_label == "Top %":
+            coverage_type  = "top_pct"
+            coverage_value = st.slider("% of eligible buildings to upgrade", 1, 100, 30, key=f"{key}_pct")
+        elif cov_label == "Top N":
+            coverage_type  = "top_n"
+            coverage_value = st.number_input(
+                "Number of buildings to upgrade", min_value=1, value=20, step=5, key=f"{key}_n"
+            )
 
-    rank_by = st.radio(
-        "Rank by",
-        ["Savings", "Savings per m²"],
-        key=f"{key}_rank",
-        horizontal=True,
-    )
+    with col_rank:
+        rank_by = st.radio(
+            "Rank by",
+            ["Savings", "Savings per m²"],
+            key=f"{key}_rank",
+            horizontal=True,
+        )
 
     filtered = stock_df.copy()
     if sel_loc:
@@ -404,7 +408,6 @@ tab_single, tab_compare = st.tabs(["Single Scenario", "Scenario Comparison"])
 with tab_single:
     params_s = scenario_controls("", "standard → retrofit", "s")
 
-    st.divider()
     run_single = st.button("Run Analysis", type="primary", use_container_width=True, key="run_single")
 
     if run_single:
@@ -494,7 +497,6 @@ with tab_compare:
     with col_b:
         params_b = scenario_controls("B", "standard → adv_retrofit", "b")
 
-    st.divider()
     run_compare = st.button("Run Comparison", type="primary", use_container_width=True, key="run_compare")
 
     if run_compare:
