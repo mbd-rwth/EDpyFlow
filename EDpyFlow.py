@@ -9,19 +9,8 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-import ui
-
 # All paths resolve relative to this script — works locally and inside container
 ROOT = Path(__file__).parent
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    handlers=[
-        ui.get_log_handler(),
-        logging.FileHandler(ROOT / f"runs/workflow_{datetime.now():%Y%m%d_%H%M%S}.log"),
-    ],
-)
 logger = logging.getLogger(__name__)
 
 ENV = "/opt/micromamba/envs"
@@ -148,6 +137,20 @@ def main():
     # Users simply call `python EDpyFlow.py` — no wrapper script needed.
     if not _inside_container():
         _relaunch_in_container()
+
+    # ui imports rich — only safe after the container check above,
+    # since rich is installed in the container but not on the host.
+    global ui
+    import ui
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[
+            ui.get_log_handler(),
+            logging.FileHandler(ROOT / f"runs/workflow_{datetime.now():%Y%m%d_%H%M%S}.log"),
+        ],
+    )
 
     import argparse
 
