@@ -6,10 +6,11 @@ From: ubuntu:22.04
     aixlib.version="2.1.1"
 
 %files
-    env_sampling.yml  /opt/envs/env_sampling.yml
-    env_modeling.yml  /opt/envs/env_modeling.yml
-    env_simulate.yml  /opt/envs/env_simulate.yml
-    env_surrogate.yml /opt/envs/env_surrogate.yml
+    env_orchestrator.yml /opt/envs/env_orchestrator.yml
+    env_sampling.yml     /opt/envs/env_sampling.yml
+    env_modeling.yml     /opt/envs/env_modeling.yml
+    env_simulate.yml     /opt/envs/env_simulate.yml
+    env_surrogate.yml    /opt/envs/env_surrogate.yml
 
 %post
     set -eu
@@ -52,25 +53,24 @@ From: ubuntu:22.04
     mkdir -p ${MAMBA_ROOT_PREFIX}
 
     echo "==> Creating conda environments"
-    micromamba create -y -f /opt/envs/env_sampling.yml  -p ${ENV_PREFIX}/sampling
-    micromamba create -y -f /opt/envs/env_modeling.yml  -p ${ENV_PREFIX}/modeling
-    micromamba create -y -f /opt/envs/env_simulate.yml  -p ${ENV_PREFIX}/simulate
-    micromamba create -y -f /opt/envs/env_surrogate.yml -p ${ENV_PREFIX}/surrogate
-
-    # Install rich into simulate env — used by the orchestrator
-    ${ENV_PREFIX}/simulate/bin/pip install --no-cache-dir rich
+    micromamba create -y -f /opt/envs/env_orchestrator.yml -p ${ENV_PREFIX}/orchestrator
+    micromamba create -y -f /opt/envs/env_sampling.yml     -p ${ENV_PREFIX}/sampling
+    micromamba create -y -f /opt/envs/env_modeling.yml     -p ${ENV_PREFIX}/modeling
+    micromamba create -y -f /opt/envs/env_simulate.yml     -p ${ENV_PREFIX}/simulate
+    micromamba create -y -f /opt/envs/env_surrogate.yml    -p ${ENV_PREFIX}/surrogate
 
     echo "==> Cleaning up"
     micromamba clean -afy
     rm -rf "${MAMBA_ROOT_PREFIX}/pkgs"
 
     echo "==> Build complete"
-    echo "OpenModelica : $(omc --version | head -1)"
-    echo "AixLib       : ${AIXLIB_VERSION}"
-    echo "sampling env : $(${ENV_PREFIX}/sampling/bin/python --version)"
-    echo "modeling env : $(${ENV_PREFIX}/modeling/bin/python --version)"
-    echo "simulate env : $(${ENV_PREFIX}/simulate/bin/python --version)"
-    echo "surrogate env: $(${ENV_PREFIX}/surrogate/bin/python --version)"
+    echo "OpenModelica    : $(omc --version | head -1)"
+    echo "AixLib          : ${AIXLIB_VERSION}"
+    echo "orchestrator env: $(${ENV_PREFIX}/orchestrator/bin/python --version)"
+    echo "sampling env    : $(${ENV_PREFIX}/sampling/bin/python --version)"
+    echo "modeling env    : $(${ENV_PREFIX}/modeling/bin/python --version)"
+    echo "simulate env    : $(${ENV_PREFIX}/simulate/bin/python --version)"
+    echo "surrogate env   : $(${ENV_PREFIX}/surrogate/bin/python --version)"
 
 %environment
     export MAMBA_ROOT_PREFIX=/opt/micromamba
@@ -82,8 +82,7 @@ From: ubuntu:22.04
 
 %runscript
     # Run from your project root — the entire project is mounted at /app
-    
-    exec ${ENV_PREFIX}/simulate/bin/python /app/EDpyFlow.py "$@"
+    exec ${ENV_PREFIX}/orchestrator/bin/python /app/EDpyFlow.py "$@"
 
 %apprun shell
     exec /bin/bash "$@"
@@ -125,7 +124,8 @@ From: ubuntu:22.04
 
     Environments
     ------------
-    sampling  → /opt/micromamba/envs/sampling/bin/python
-    modeling  → /opt/micromamba/envs/modeling/bin/python
-    simulate  → /opt/micromamba/envs/simulate/bin/python  (+ rich, runs orchestrator)
-    surrogate → /opt/micromamba/envs/surrogate/bin/python
+    orchestrator → /opt/micromamba/envs/orchestrator/bin/python  (runs EDpyFlow.py)
+    sampling     → /opt/micromamba/envs/sampling/bin/python
+    modeling     → /opt/micromamba/envs/modeling/bin/python
+    simulate     → /opt/micromamba/envs/simulate/bin/python
+    surrogate    → /opt/micromamba/envs/surrogate/bin/python

@@ -19,7 +19,7 @@ STEPS = [
     ("sampling",  f"{ENV}/sampling/bin/python",  "src/sampling/generate_samples.py",        "LHS Parameter Sampling"),
     ("modeling",  f"{ENV}/modeling/bin/python",  "src/modeling/generate_thermal_models.py",  "TEASER Model Generation"),
     ("simulate",  f"{ENV}/simulate/bin/python",  "src/simulation/run_simulations.py",        "OpenModelica Simulation"),
-    ("dataset",   f"{ENV}/simulate/bin/python",  "src/data_prep/generate_dataset.py",        "Dataset Preparation"),
+    ("dataset",   f"{ENV}/surrogate/bin/python", "src/data_prep/generate_dataset.py",        "Dataset Preparation"),
     ("surrogate", f"{ENV}/surrogate/bin/python", "src/training/train_surrogate.py",          "Surrogate Model Training"),
 ]
 
