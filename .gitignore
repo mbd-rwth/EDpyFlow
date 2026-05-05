@@ -5,3 +5,6 @@ data/locations/*.mos
 
 # Editor
 .vscode/
+__pycache__/
+runs/
+container/workflow.sif

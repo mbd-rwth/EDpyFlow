@@ -1,0 +1,9 @@
+name: modeling
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pyyaml
+  - pip
+  - pip:
+      - teaser

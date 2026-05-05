@@ -1,0 +1,131 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    org.opencontainers.image.description="OpenModelica workflow: sampling, modeling, simulate, surrogate"
+    aixlib.version="2.1.1"
+
+%files
+    env_sampling.yml  /opt/envs/env_sampling.yml
+    env_modeling.yml  /opt/envs/env_modeling.yml
+    env_simulate.yml  /opt/envs/env_simulate.yml
+    env_surrogate.yml /opt/envs/env_surrogate.yml
+
+%post
+    set -eu
+    export DEBIAN_FRONTEND=noninteractive
+    export TZ=Etc/UTC
+
+    export MAMBA_ROOT_PREFIX=/opt/micromamba
+    export ENV_PREFIX=${MAMBA_ROOT_PREFIX}/envs
+    AIXLIB_VERSION="v2.1.1"
+
+    echo "==> Installing system dependencies and OpenModelica"
+    apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl gnupg git wget bzip2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    curl -fsSL https://build.openmodelica.org/apt/openmodelica.asc | \
+        gpg --dearmor -o /usr/share/keyrings/openmodelica-keyring.gpg
+
+    UBUNTU_CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2)
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] \
+      https://build.openmodelica.org/apt ${UBUNTU_CODENAME} stable" \
+      > /etc/apt/sources.list.d/openmodelica.list
+
+    apt-get update && apt-get install -y --no-install-recommends \
+        omc omlibrary \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    echo "OpenModelica: $(omc --version | head -1)"
+
+    echo "==> Installing AixLib ${AIXLIB_VERSION}"
+    git clone --depth 1 --branch ${AIXLIB_VERSION} \
+        https://github.com/RWTH-EBC/AixLib.git /opt/AixLib
+    rm -rf /opt/AixLib/.git
+
+    echo "==> Installing Micromamba"
+    MICROMAMBA_VERSION="2.0.4"
+    curl -Ls "https://micro.mamba.pm/api/micromamba/linux-64/${MICROMAMBA_VERSION}" \
+        | tar -xvj -C /usr/local/bin --strip-components=1 bin/micromamba
+    chmod +x /usr/local/bin/micromamba
+    mkdir -p ${MAMBA_ROOT_PREFIX}
+
+    echo "==> Creating conda environments"
+    micromamba create -y -f /opt/envs/env_sampling.yml  -p ${ENV_PREFIX}/sampling
+    micromamba create -y -f /opt/envs/env_modeling.yml  -p ${ENV_PREFIX}/modeling
+    micromamba create -y -f /opt/envs/env_simulate.yml  -p ${ENV_PREFIX}/simulate
+    micromamba create -y -f /opt/envs/env_surrogate.yml -p ${ENV_PREFIX}/surrogate
+
+    # Install rich into simulate env — used by the orchestrator
+    ${ENV_PREFIX}/simulate/bin/pip install --no-cache-dir rich
+
+    echo "==> Cleaning up"
+    micromamba clean -afy
+    rm -rf "${MAMBA_ROOT_PREFIX}/pkgs"
+
+    echo "==> Build complete"
+    echo "OpenModelica : $(omc --version | head -1)"
+    echo "AixLib       : ${AIXLIB_VERSION}"
+    echo "sampling env : $(${ENV_PREFIX}/sampling/bin/python --version)"
+    echo "modeling env : $(${ENV_PREFIX}/modeling/bin/python --version)"
+    echo "simulate env : $(${ENV_PREFIX}/simulate/bin/python --version)"
+    echo "surrogate env: $(${ENV_PREFIX}/surrogate/bin/python --version)"
+
+%environment
+    export MAMBA_ROOT_PREFIX=/opt/micromamba
+    export ENV_PREFIX=${MAMBA_ROOT_PREFIX}/envs
+    export PATH=/usr/local/bin:$PATH
+    export PYTHONNOUSERSITE=1
+    export OM_HOME=/usr
+    export MODELICAPATH=/opt/AixLib:/usr/lib/omlibrary
+
+%runscript
+    # Run from your project root — the entire project is mounted at /app
+    
+    exec ${ENV_PREFIX}/simulate/bin/python /app/EDpyFlow.py "$@"
+
+%apprun shell
+    exec /bin/bash "$@"
+
+%apprun omc
+    exec /usr/bin/omc "$@"
+
+%help
+    OpenModelica Workflow Container
+    ================================
+
+    Run from your PROJECT ROOT (not the container/ folder):
+
+      cd /path/to/project
+
+      # Full workflow
+      python EDpyFlow.py
+
+      # Single step
+      python EDpyFlow.py --step sampling
+      python EDpyFlow.py --step modeling
+      python EDpyFlow.py --step simulate
+      python EDpyFlow.py --step dataset
+      python EDpyFlow.py --step surrogate
+      
+    
+
+    Project layout expected at bind root (/app):
+      EDpyFlow.py
+      ui.py
+      src/
+        sampling/generate_samples.py
+        modeling/generate_thermal_models.py
+        simulation/run_simulations.py
+        data_prep/generate_dataset.py
+        training/train_surrogate.py
+      data/
+      runs/
+
+    Environments
+    ------------
+    sampling  → /opt/micromamba/envs/sampling/bin/python
+    modeling  → /opt/micromamba/envs/modeling/bin/python
+    simulate  → /opt/micromamba/envs/simulate/bin/python  (+ rich, runs orchestrator)
+    surrogate → /opt/micromamba/envs/surrogate/bin/python

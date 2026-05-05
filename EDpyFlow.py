@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""OpenModelica Workflow Orchestrator"""
+
+import os
+import shutil
+import subprocess
+import sys
+import logging
+from pathlib import Path
+from datetime import datetime
+
+import ui
+
+# All paths resolve relative to this script — works locally and inside container
+ROOT = Path(__file__).parent
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[
+        ui.get_log_handler(),
+        logging.FileHandler(ROOT / f"runs/workflow_{datetime.now():%Y%m%d_%H%M%S}.log"),
+    ],
+)
+logger = logging.getLogger(__name__)
+
+ENV = "/opt/micromamba/envs"
+
+STEPS = [
+    ("sampling",  f"{ENV}/sampling/bin/python",  "src/sampling/generate_samples.py",        "LHS Parameter Sampling"),
+    ("modeling",  f"{ENV}/modeling/bin/python",  "src/modeling/generate_thermal_models.py",  "TEASER Model Generation"),
+    ("simulate",  f"{ENV}/simulate/bin/python",  "src/simulation/run_simulations.py",        "OpenModelica Simulation"),
+    ("dataset",   f"{ENV}/simulate/bin/python",  "src/data_prep/generate_dataset.py",        "Dataset Preparation"),
+    ("surrogate", f"{ENV}/surrogate/bin/python", "src/training/train_surrogate.py",          "Surrogate Model Training"),
+]
+
+STEP_MAP = {name: (python, script, desc) for name, python, script, desc in STEPS}
+
+
+# ---------------------------------------------------------------------------
+# Container boundary — transparent to the user
+# ---------------------------------------------------------------------------
+
+def _inside_container() -> bool:
+    """Detect whether we are already running inside an Apptainer/Singularity container."""
+    return os.path.exists("/.singularity.d")
+
+
+def _relaunch_in_container() -> None:
+    """Re-exec the current invocation transparently through Apptainer."""
+    sif = ROOT / "container" / "workflow.sif"
+
+    if not shutil.which("apptainer"):
+        sys.exit(
+            "Error: Apptainer is not installed or not on PATH.\n"
+            "See: https://apptainer.org/docs/user/latest/quick_start.html"
+        )
+
+    if not sif.exists():
+        sys.exit(
+            f"Error: Container image not found at {sif}\n"
+            "Build it first with:\n"
+            "  apptainer build container/workflow.sif container/workflow.def"
+        )
+
+    apptainer = shutil.which("apptainer")
+    os.execv(apptainer, [
+        "apptainer", "run",
+        "--bind", f"{ROOT}:/app",
+        "--pwd", "/app",
+        str(sif),
+        *sys.argv[1:],          # forward all arguments unchanged
+    ])
+    # os.execv replaces the current process — nothing below this runs
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator
+# ---------------------------------------------------------------------------
+
+class WorkflowOrchestrator:
+    def __init__(self):
+        self.results = []
+        self._ensure_dirs()
+        ui.print_banner(ROOT, ROOT / "data")
+
+    def _ensure_dirs(self):
+        for path in (
+            ROOT / "data" / "locations",
+            ROOT / "runs",
+        ):
+            path.mkdir(parents=True, exist_ok=True)
+
+    def run_step(self, name: str, python: str, script: str, description: str) -> bool:
+        script_path = ROOT / script
+        if not script_path.exists():
+            logger.error(f"Script not found: {script_path}")
+            self._record(description, success=False, duration=None)
+            return False
+
+        cmd = [python, str(script_path)]
+        ui.print_rule(description)
+        ui.print_cmd(cmd)
+
+        start = datetime.now()
+        success = False
+
+        with ui.Spinner(description):
+            try:
+                subprocess.run(cmd, check=True, cwd=ROOT)
+                success = True
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Step failed with exit code {e.returncode}")
+
+        duration = datetime.now() - start
+        self._record(description, success=success, duration=duration)
+        ui.print_step_result(success, duration)
+        return success
+
+    def _record(self, description, success, duration):
+        self.results.append({
+            "description": description,
+            "success": success,
+            "duration": str(duration).split(".")[0] if duration else "—",
+        })
+
+    def run_full_workflow(self) -> bool:
+        logger.info("Starting full workflow")
+        start = datetime.now()
+
+        for name, python, script, description in STEPS:
+            if not self.run_step(name, python, script, description):
+                ui.print_summary(self.results)
+                logger.error("Workflow stopped due to error")
+                return False
+
+        ui.print_summary(self.results)
+        ui.print_workflow_success(datetime.now() - start)
+        return True
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def main():
+    # Transparently relaunch through Apptainer if running outside the container.
+    # Users simply call `python EDpyFlow.py` — no wrapper script needed.
+    if not _inside_container():
+        _relaunch_in_container()
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run OpenModelica workflow")
+    parser.add_argument("--step", choices=list(STEP_MAP.keys()),
+                        help=f"Run a single step: {', '.join(STEP_MAP.keys())}")
+    args = parser.parse_args()
+
+    try:
+        orchestrator = WorkflowOrchestrator()
+
+        if args.step:
+            python, script, desc = STEP_MAP[args.step]
+            orchestrator.run_step(args.step, python, script, desc)
+            ui.print_summary(orchestrator.results)
+            success = orchestrator.results[-1]["success"]
+        else:
+            success = orchestrator.run_full_workflow()
+
+        sys.exit(0 if success else 1)
+
+    except Exception as e:
+        logger.exception(f"Fatal error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -3,7 +3,7 @@
 
 # Name of this run. All outputs will be written to runs/{run_name}/.
 # Change this for each new run to avoid overwriting previous results.
-run_name: dummy_4el
+run_name: dummy_4el_test
 
 
 # Locations and their corresponding weather files (.mos format).
@@ -24,7 +24,7 @@ refurbishment_status:
 
 # Latin Hypercube Sampling parameters.
 sampling:
-  n_per_type: 5   # number of samples per building typology (MFH, SFH, TH, AB)
+  n_per_type: 2   # number of samples per building typology (MFH, SFH, TH, AB)
   seed: 123
   criterion: maximin
 
