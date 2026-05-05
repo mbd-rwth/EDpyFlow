@@ -11,7 +11,7 @@ already-simulated buildings are skipped.
 Reads:  config.yaml
         runs/{run_name}/simulation_input/residentials_{location}/
 Output: runs/{run_name}/simulation_output/sim_results_{location}.json
-        runs/{run_name}/simulation.log
+        runs/{run_name}/logs/simulation_{timestamp}.log
 """
 
 from OMPython import OMCSessionZMQ
@@ -22,6 +22,7 @@ import json
 import re
 import os
 import yaml
+from datetime import datetime
 
 
 # Path to AixLib within the container
@@ -39,14 +40,16 @@ keep_raw_output = config["simulation"].get("keep_raw_output", False)
 run_dir        = os.path.join("runs", run_name)
 sim_input_dir  = os.path.abspath(os.path.join(run_dir, "simulation_input"))
 sim_output_dir = os.path.join(run_dir, "simulation_output")
+logs_dir = os.path.join(run_dir, "logs")
 
 os.makedirs(sim_output_dir, exist_ok=True)
+os.makedirs(logs_dir, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(run_dir, "simulation.log")),
+        logging.FileHandler(os.path.join(logs_dir, f"simulation_{datetime.now():%Y%m%d_%H%M%S}.log")),
         logging.StreamHandler(),
     ],
 )

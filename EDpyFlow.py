@@ -142,13 +142,24 @@ def main():
     # since rich is installed in the container but not on the host.
     global ui
     import ui
+    import yaml
+
+    with open("config.yaml") as f:
+        run_name = yaml.safe_load(f)["run_name"]
+
+    run_dir = os.path.join("runs", run_name)
+    if os.path.exists(run_dir):
+        sys.exit(f"Error: run '{run_name}' already exists at {run_dir}. Choose a different run_name in config.yaml.")
+
+    logs_dir = os.path.join(run_dir, "logs")
+    os.makedirs(logs_dir)
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
         handlers=[
             ui.get_log_handler(),
-            logging.FileHandler(ROOT / f"runs/workflow_{datetime.now():%Y%m%d_%H%M%S}.log"),
+            logging.FileHandler(os.path.join(logs_dir, f"workflow_{datetime.now():%Y%m%d_%H%M%S}.log")),
         ],
     )
 

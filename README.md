@@ -82,7 +82,9 @@ runs/{run_name}/
 ├── simulation_output/                  ← simulation results (Step 3)
 │   ├── sim_results_berlin.json
 │   └── ...
-├── simulation.log                      ← simulation log (Step 3)
+├── logs/
+│   ├── simulation_{timestamp}.log      ← simulation log (Step 3)
+│   └── workflow_{timestamp}.log        ← workflow log
 ├── synthetic_dataset/
 │   └── dataset.csv                     ← training dataset (Step 4)
 └── models/

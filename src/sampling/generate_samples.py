@@ -70,11 +70,7 @@ refurbishment_status = config["refurbishment_status"]
 
 run_dir = os.path.join("runs", run_name)
 
-if os.path.exists(run_dir):
-    print(f"Error: run '{run_name}' already exists at {run_dir}. Choose a different run_name.")
-    sys.exit(1)
-
-os.makedirs(run_dir)
+os.makedirs(run_dir, exist_ok=True)
 shutil.copy("config.yaml", os.path.join(run_dir, "config.yaml"))
 
 # Generate LHS samples for each building typology
