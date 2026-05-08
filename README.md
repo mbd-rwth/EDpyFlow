@@ -24,10 +24,10 @@ The pipeline proceeds in five stages. Each stage is self-contained and uses file
 - [Apptainer](https://apptainer.org/) to build and run the container
 - Weather files in `.mos` format for the six locations (see [`data/locations/README.md`](data/locations/README.md))
 
-Build the container before first use (from the repo root):
+Build the container before first use:
 
 ```bash
-cd container && apptainer build ../EDpyFlow.sif EDpyFlow.def
+cd container && apptainer build EDpyFlow.sif EDpyFlow.def
 ```
 
 ## Configuration
@@ -52,21 +52,6 @@ Run the full pipeline:
 python EDpyFlow.py
 ```
 
-Run a single step:
-
-```bash
-python EDpyFlow.py --step sampling
-python EDpyFlow.py --step teaser
-python EDpyFlow.py --step simulate
-python EDpyFlow.py --step dataset
-python EDpyFlow.py --step surrogate
-```
-
-A custom container path can be specified with `--container`:
-
-```bash
-python EDpyFlow.py --container /path/to/EDpyFlow.sif
-```
 
 ## Output
 

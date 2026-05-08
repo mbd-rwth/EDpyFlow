@@ -2,7 +2,7 @@ Bootstrap: docker
 From: ubuntu:22.04
 
 %labels
-    org.opencontainers.image.description="OpenModelica workflow: sampling, modeling, simulate, surrogate"
+    org.opencontainers.image.description="EDpyFlow: containerized pipeline for building energy simulation and surrogate model training"
     aixlib.version="2.1.1"
 
 %files
@@ -91,8 +91,8 @@ From: ubuntu:22.04
     exec /usr/bin/omc "$@"
 
 %help
-    OpenModelica Workflow Container
-    ================================
+    EDpyFlow Container
+    ==================
 
     Run from your PROJECT ROOT (not the container/ folder):
 

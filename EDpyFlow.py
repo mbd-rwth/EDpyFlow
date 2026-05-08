@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenModelica Workflow Orchestrator"""
+"""EDpyFlow Orchestrator"""
 
 import os
 import shutil
@@ -37,7 +37,7 @@ def _inside_container() -> bool:
 
 def _relaunch_in_container() -> None:
     """Re-exec the current invocation transparently through Apptainer."""
-    sif = ROOT / "container" / "workflow.sif"
+    sif = ROOT / "container" / "EDpyFlow.sif"
 
     if not shutil.which("apptainer"):
         sys.exit(
@@ -49,7 +49,7 @@ def _relaunch_in_container() -> None:
         sys.exit(
             f"Error: Container image not found at {sif}\n"
             "Build it first with:\n"
-            "  apptainer build container/workflow.sif container/workflow.def"
+            "  cd container && apptainer build EDpyFlow.sif EDpyFlow.def"
         )
 
     apptainer = shutil.which("apptainer")
@@ -165,7 +165,7 @@ def main():
 
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run OpenModelica workflow")
+    parser = argparse.ArgumentParser(description="Run EDpyFlow pipeline")
     parser.add_argument("--step", choices=list(STEP_MAP.keys()),
                         help=f"Run a single step: {', '.join(STEP_MAP.keys())}")
     args = parser.parse_args()
