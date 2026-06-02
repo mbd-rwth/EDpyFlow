@@ -80,6 +80,12 @@ runs/{run_name}/
 
 For questions, please contact [bagherinejad@mbd.rwth-aachen.de](mailto:bagherinejad@mbd.rwth-aachen.de) or open an issue at [https://github.com/mbd-rwth/EDpyFlow/issues](https://github.com/mbd-rwth/EDpyFlow/issues).
 
+## License
+
+This repository is licensed under the [MIT License](LICENSE).
+
+This repository includes an Apptainer definition file used to build the container environment. The definition file is licensed under the MIT License. Third-party software installed during the build remains subject to its respective licenses. Users are responsible for ensuring compliance with those licenses when building or redistributing container images.
+
 ## Acknowledgments
 
 This work was performed as part of the ENERsyte project and received funding from Innovationsförderagentur.NRW through the Grüne Gründungen.NRW initiative of the Ministry for the Environment, Nature Conservation and Transport of the State of North Rhine-Westphalia within the framework of the EFRE/JTF-Programme NRW 2021-2027, Co-funded by the European Union (EFRE-20800324).

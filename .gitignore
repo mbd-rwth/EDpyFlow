@@ -1,10 +1,9 @@
 *.sif
 
-# Climate data (DWD license — not redistributable)
+# Climate data (CC BY 4.0, DWD — not included, users obtain from DWD)
 data/locations/*.mos
 
 # Editor
 .vscode/
 __pycache__/
 runs/
-container/workflow.sif
