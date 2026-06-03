@@ -78,6 +78,12 @@ runs/{run_name}/
 
 For questions, please contact [bagherinejad@mbd.rwth-aachen.de](mailto:bagherinejad@mbd.rwth-aachen.de) or open an issue at [https://github.com/mbd-rwth/EDpyFlow/issues](https://github.com/mbd-rwth/EDpyFlow/issues).
 
+## Contributors
+
+This project was developed by Nazanin Bagherinejad, with contributions from:
+
+- [V Mithlesh Kumar] - Apptainer containerization
+
 ## License
 
 This repository is licensed under the [MIT License](LICENSE).
