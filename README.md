@@ -3,9 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![Apptainer](https://img.shields.io/badge/container-Apptainer-informational)
 
-**EDpyFlow** is a containerized, end-to-end Python workflow built on TEASER and OpenModelica for running building energy simulations and training surrogate models for predicting residential building heat demand. All dependencies are bundled in the container — OpenModelica, AixLib, TEASER, and the required Python environments — so no prior knowledge of Modelica tooling is required.
-
-In its default configuration, the pipeline covers four TABULA DE building typologies (SFH, TH, MFH, AB), six German cities, and three refurbishment levels, yielding 21,600 building configurations per fidelity level. The resulting trained models constitute the EDSurrogate model family (EDSurrogate-2el and EDSurrogate-4el).
+**EDpyFlow** is a containerized, end-to-end Python workflow for generating building energy simulations and training surrogate models for residential heat-demand prediction. It builds on [TEASER](https://github.com/RWTH-EBC/TEASER) and [OpenModelica](https://openmodelica.org/) and bundles all required dependencies in an Apptainer container, including OpenModelica, [AixLib](https://github.com/RWTH-EBC/AixLib), TEASER, and the necessary Python environments. This allows users to run the full workflow without prior experience with Modelica tooling.
 
 ## Pipeline
 
@@ -84,7 +82,7 @@ For questions, please contact [bagherinejad@mbd.rwth-aachen.de](mailto:bagherine
 
 This repository is licensed under the [MIT License](LICENSE).
 
-This repository includes an Apptainer definition file used to build the container environment. The definition file is licensed under the MIT License. Third-party software installed during the build remains subject to its respective licenses. Users are responsible for ensuring compliance with those licenses when building or redistributing container images.
+This repository includes an Apptainer definition file used to build the container environment. Third-party software installed during the build remains subject to its respective licenses. Users are responsible for ensuring compliance with those licenses when building or redistributing container images.
 
 ## Acknowledgments
 
