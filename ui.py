@@ -32,7 +32,7 @@ def print_cmd(cmd):
     console.print(f"[dim]$ {' '.join(cmd)}[/dim]\n")
 
 
-def print_step_result(success, duration):
+def print_stage_result(success, duration):
     if success:
         console.print(f"[bold green]✓[/bold green] Completed in {duration}\n")
     else:
@@ -41,7 +41,7 @@ def print_step_result(success, duration):
 
 def print_summary(results):
     table = Table(title="Workflow Summary", show_header=True, header_style="bold cyan")
-    table.add_column("Step", style="dim", width=40)
+    table.add_column("Stage", style="dim", width=40)
     table.add_column("Status", justify="center", width=10)
     table.add_column("Duration", justify="right", width=12)
 
@@ -55,14 +55,14 @@ def print_summary(results):
 
 def print_workflow_success(total):
     console.print(Panel(
-        f"[bold green]All steps completed successfully[/bold green]\n"
+        f"[bold green]All stages completed successfully[/bold green]\n"
         f"[dim]Total time: {total}[/dim]",
         border_style="green",
     ))
 
 
 class Spinner:
-    """Context manager — shows a spinner while a step runs."""
+    """Context manager — shows a spinner while a stage runs."""
 
     def __init__(self, description):
         self._description = description
