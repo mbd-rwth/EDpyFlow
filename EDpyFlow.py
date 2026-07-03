@@ -15,15 +15,15 @@ logger = logging.getLogger(__name__)
 
 ENV = "/opt/micromamba/envs"
 
-STEPS = [
-    ("sampling",  f"{ENV}/sampling/bin/python",  "src/sampling/generate_samples.py",        "LHS Parameter Sampling"),
-    ("modeling",  f"{ENV}/modeling/bin/python",  "src/modeling/generate_thermal_models.py",  "TEASER Model Generation"),
-    ("simulate",  f"{ENV}/simulate/bin/python",  "src/simulation/run_simulations.py",        "OpenModelica Simulation"),
-    ("dataset",   f"{ENV}/surrogate/bin/python", "src/data_prep/generate_dataset.py",        "Dataset Preparation"),
-    ("surrogate", f"{ENV}/surrogate/bin/python", "src/training/train_surrogate.py",          "Surrogate Model Training"),
+STAGES = [
+    ("sampling",           f"{ENV}/sampling/bin/python",  "src/sampling/generate_samples.py",        "LHS Parameter Sampling"),
+    ("modeling",           f"{ENV}/modeling/bin/python",  "src/modeling/generate_thermal_models.py",  "TEASER Model Generation"),
+    ("simulation",         f"{ENV}/simulate/bin/python",  "src/simulation/run_simulations.py",        "OpenModelica Simulation"),
+    ("dataset_assembly",   f"{ENV}/surrogate/bin/python", "src/data_prep/generate_dataset.py",        "Dataset Preparation"),
+    ("surrogate_training", f"{ENV}/surrogate/bin/python", "src/training/train_surrogate.py",          "Surrogate Model Training"),
 ]
 
-STEP_MAP = {name: (python, script, desc) for name, python, script, desc in STEPS}
+STAGE_MAP = {name: (python, script, desc) for name, python, script, desc in STAGES}
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ class WorkflowOrchestrator:
         ):
             path.mkdir(parents=True, exist_ok=True)
 
-    def run_step(self, name: str, python: str, script: str, description: str) -> bool:
+    def run_stage(self, name: str, python: str, script: str, description: str) -> bool:
         script_path = ROOT / script
         if not script_path.exists():
             logger.error(f"Script not found: {script_path}")
@@ -99,11 +99,11 @@ class WorkflowOrchestrator:
                 subprocess.run(cmd, check=True, cwd=ROOT)
                 success = True
             except subprocess.CalledProcessError as e:
-                logger.error(f"Step failed with exit code {e.returncode}")
+                logger.error(f"Stage failed with exit code {e.returncode}")
 
         duration = datetime.now() - start
         self._record(description, success=success, duration=duration)
-        ui.print_step_result(success, duration)
+        ui.print_stage_result(success, duration)
         return success
 
     def _record(self, description, success, duration):
@@ -117,8 +117,8 @@ class WorkflowOrchestrator:
         logger.info("Starting full workflow")
         start = datetime.now()
 
-        for name, python, script, description in STEPS:
-            if not self.run_step(name, python, script, description):
+        for name, python, script, description in STAGES:
+            if not self.run_stage(name, python, script, description):
                 ui.print_summary(self.results)
                 logger.error("Workflow stopped due to error")
                 return False
@@ -147,12 +147,21 @@ def main():
     with open("config.yaml") as f:
         run_name = yaml.safe_load(f)["run_name"]
 
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run EDpyFlow pipeline")
+    parser.add_argument("--stage", choices=list(STAGE_MAP.keys()),
+                        help=f"Run a single stage: {', '.join(STAGE_MAP.keys())}")
+    args = parser.parse_args()
+
     run_dir = os.path.join("runs", run_name)
-    if os.path.exists(run_dir):
+    # A single stage runs inside an existing run, so only guard against
+    # overwriting when starting a fresh full run.
+    if args.stage is None and os.path.exists(run_dir):
         sys.exit(f"Error: run '{run_name}' already exists at {run_dir}. Choose a different run_name in config.yaml.")
 
     logs_dir = os.path.join(run_dir, "logs")
-    os.makedirs(logs_dir)
+    os.makedirs(logs_dir, exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,
@@ -163,19 +172,12 @@ def main():
         ],
     )
 
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run EDpyFlow pipeline")
-    parser.add_argument("--step", choices=list(STEP_MAP.keys()),
-                        help=f"Run a single step: {', '.join(STEP_MAP.keys())}")
-    args = parser.parse_args()
-
     try:
         orchestrator = WorkflowOrchestrator()
 
-        if args.step:
-            python, script, desc = STEP_MAP[args.step]
-            orchestrator.run_step(args.step, python, script, desc)
+        if args.stage:
+            python, script, desc = STAGE_MAP[args.stage]
+            orchestrator.run_stage(args.stage, python, script, desc)
             ui.print_summary(orchestrator.results)
             success = orchestrator.results[-1]["success"]
         else:
