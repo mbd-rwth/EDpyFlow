@@ -11,6 +11,7 @@ From: ubuntu:22.04
     env_modeling.yml     /opt/envs/env_modeling.yml
     env_simulate.yml     /opt/envs/env_simulate.yml
     env_surrogate.yml    /opt/envs/env_surrogate.yml
+    env_dashboard.yml    /opt/envs/env_dashboard.yml
 
 %post
     set -eu
@@ -58,6 +59,7 @@ From: ubuntu:22.04
     micromamba create -y -f /opt/envs/env_modeling.yml     -p ${ENV_PREFIX}/modeling
     micromamba create -y -f /opt/envs/env_simulate.yml     -p ${ENV_PREFIX}/simulate
     micromamba create -y -f /opt/envs/env_surrogate.yml    -p ${ENV_PREFIX}/surrogate
+    micromamba create -y -f /opt/envs/env_dashboard.yml    -p ${ENV_PREFIX}/dashboard
 
     echo "==> Cleaning up"
     micromamba clean -afy
@@ -71,6 +73,7 @@ From: ubuntu:22.04
     echo "modeling env    : $(${ENV_PREFIX}/modeling/bin/python --version)"
     echo "simulate env    : $(${ENV_PREFIX}/simulate/bin/python --version)"
     echo "surrogate env   : $(${ENV_PREFIX}/surrogate/bin/python --version)"
+    echo "dashboard env   : $(${ENV_PREFIX}/dashboard/bin/python --version)"
 
 %environment
     export MAMBA_ROOT_PREFIX=/opt/micromamba
@@ -101,12 +104,15 @@ From: ubuntu:22.04
       # Full workflow
       python EDpyFlow.py
 
-      # Single step
-      python EDpyFlow.py --step sampling
-      python EDpyFlow.py --step modeling
-      python EDpyFlow.py --step simulate
-      python EDpyFlow.py --step dataset
-      python EDpyFlow.py --step surrogate
+      # Single stage
+      python EDpyFlow.py --stage sampling
+      python EDpyFlow.py --stage modeling
+      python EDpyFlow.py --stage simulation
+      python EDpyFlow.py --stage dataset_assembly
+      python EDpyFlow.py --stage surrogate_training
+
+      # Dashboard (interactive Streamlit app; Ctrl-C to stop)
+      python EDpyFlow.py --stage dashboard
       
     
 
@@ -119,6 +125,8 @@ From: ubuntu:22.04
         simulation/run_simulations.py
         data_prep/generate_dataset.py
         training/train_surrogate.py
+      dashboard/
+        app.py
       data/
       runs/
 
@@ -129,3 +137,4 @@ From: ubuntu:22.04
     modeling     → /opt/micromamba/envs/modeling/bin/python
     simulate     → /opt/micromamba/envs/simulate/bin/python
     surrogate    → /opt/micromamba/envs/surrogate/bin/python
+    dashboard    → /opt/micromamba/envs/dashboard/bin/streamlit  (runs dashboard/app.py)
