@@ -150,9 +150,17 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Run EDpyFlow pipeline")
-    parser.add_argument("--stage", choices=list(STAGE_MAP.keys()),
-                        help=f"Run a single stage: {', '.join(STAGE_MAP.keys())}")
+    stage_choices = list(STAGE_MAP.keys()) + ["dashboard"]
+    parser.add_argument("--stage", choices=stage_choices,
+                        help=f"Run a single stage: {', '.join(stage_choices)}")
     args = parser.parse_args()
+
+    # The dashboard is selected like any other stage, but it is an interactive
+    # Streamlit server rather than a batch script — so it skips the run
+    # bookkeeping (run_dir guard, logging) and hands off to Streamlit directly.
+    if args.stage == "dashboard":
+        streamlit = f"{ENV}/dashboard/bin/streamlit"
+        os.execv(streamlit, [streamlit, "run", str(ROOT / "dashboard" / "app.py")])
 
     run_dir = os.path.join("runs", run_name)
     # A single stage runs inside an existing run, so only guard against

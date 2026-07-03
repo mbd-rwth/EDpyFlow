@@ -71,3 +71,15 @@ print(f"R²:              {metrics.r2_score(y_test, y_pred):.4f}")
 os.makedirs(model_dir, exist_ok=True)
 model.save_model(os.path.join(model_dir, f"{model_name}.json"))
 print(f"Saved model to {model_dir}/{model_name}.json")
+
+# Persist each split so the naming is unambiguous: dataset.csv is the full
+# data, while the *_set.csv files are the actual train / val / test splits.
+train_set_path = os.path.join(run_dir, "synthetic_dataset", "train_set.csv")
+val_set_path   = os.path.join(run_dir, "synthetic_dataset", "val_set.csv")
+test_set_path  = os.path.join(run_dir, "synthetic_dataset", "test_set.csv")
+df.loc[X_train.index].to_csv(train_set_path)
+df.loc[X_val.index].to_csv(val_set_path)
+df.loc[X_test.index].to_csv(test_set_path)
+print(f"Saved train set to {train_set_path}")
+print(f"Saved val set   to {val_set_path}")
+print(f"Saved test set  to {test_set_path}")

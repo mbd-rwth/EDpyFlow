@@ -6,7 +6,7 @@
 ![Apptainer](https://img.shields.io/badge/container-Apptainer-informational)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**EDpyFlow** generates synthetic building-energy data and trains machine-learning surrogate models that predict the annual heat demand of German residential buildings. It wraps the full physics-based modeling and simulation stack ([TEASER](https://github.com/RWTH-EBC/TEASER), [OpenModelica](https://openmodelica.org/), and [AixLib](https://github.com/RWTH-EBC/AixLib)) together with all required Python environments in an [Apptainer](https://apptainer.org/) container, so the entire pipeline runs reproducibly without prior Modelica experience.
+**EDpyFlow** generates synthetic building-energy data and trains machine-learning surrogate models that predict the annual heat demand of German residential buildings. It wraps the full physics-based modeling and simulation stack ([TEASER](https://github.com/RWTH-EBC/TEASER), [OpenModelica](https://openmodelica.org/), and [AixLib](https://github.com/RWTH-EBC/AixLib)) together with all required Python environments in an [Apptainer](https://apptainer.org/) container, so the entire pipeline runs reproducibly without prior Modelica experience. Additionally, EDpyFlow provides a dashboard for refurbishment scenario analysis on the trained surrogate.
 
 ![EDpyFlow](assets/diagram.png)
 
@@ -15,6 +15,7 @@
 - **Fully containerized**: OpenModelica, AixLib, TEASER, and all Python environments bundled via Apptainer; no manual toolchain setup.
 - **Config-driven**: a single `config.yaml` controls sampling, modeling, simulation, and surrogate training.
 - **Resumable**: stages exchange data through files, so the pipeline can be entered or interrupted at any step without reprocessing upstream results.
+- **Scenario dashboard**: explore and compare refurbishment strategies on the trained surrogate.
 
 ## Pipeline
 
@@ -103,6 +104,31 @@ runs/{run_name}/
 │   └── dataset.csv                     ← training dataset (Dataset Assembly)
 └── models/
     └── {model_name}.json               ← trained surrogate model (Surrogate Training)
+```
+
+## Scenario Analysis Dashboard
+
+EDpyFlow includes an interactive dashboard for refurbishment scenario analysis. The dashboard connects workflow runs with custom building stock: a trained surrogate model is selected, refurbishment upgrade paths are applied, and the resulting heat demand savings can be explored to compare scenarios and identify high-impact buildings.
+
+The dashboard supports two analysis modes:
+
+- **Single Scenario**: applies a refurbishment upgrade path, such as standard to advanced refurbishment, to a filtered building stock. Results include savings breakdowns by city, building type, and construction decade, as well as a cumulative savings curve.
+- **Scenario Comparison**: compares two scenarios side by side (A vs B) with independent filters and upgrade paths.
+
+By default, the dashboard uses the held-out `test_set.csv` generated during surrogate training. A custom building stock CSV can also be uploaded.
+
+Launch the dashboard through the EDpyFlow container:
+
+```bash
+python EDpyFlow.py --stage dashboard
+```
+
+Or run it in a dedicated Conda environment:
+
+```bash
+conda env create -f container/env_dashboard.yml
+conda activate dashboard
+streamlit run dashboard/app.py
 ```
 
 ## Contributors
