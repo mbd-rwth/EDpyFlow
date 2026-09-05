@@ -36,10 +36,12 @@ num_elements: 4
 # keep_raw_output: if true, raw per-building files from OpenModelica are retained in
 # simulation_input/residentials_{location}/Outputs/. WARNING: requires significant
 # additional disk space.
+# max_attempts: how many times a building is simulated before it is recorded as failed.
 simulation:
   duration_days: 365
   timestep_hours: 1
   keep_raw_output: false
+  max_attempts: 3
 
 # XGBoost surrogate model hyperparameters and data split ratios.
 surrogate:
