@@ -19,30 +19,50 @@ from psimpy.sampler import LHS
 import os
 
 
-# Sampling bounds per building typology, derived from TABULA DE reference buildings.
+# Sampling bounds per building typology.
 # Each row defines [min, max] for one input parameter.
 # Parameters (columns): construction_year, net_leased_area [m²], num_floors, floor_height [m]
 BUILDING_BOUNDS = {
-    "MFH": np.array([[1850, 2015], [200, 2300], [2, 6],  [2.5, 4]]),
-    "SFH": np.array([[1850, 2015], [50,  280],  [1, 3],  [2.5, 4]]),
-    "TH":  np.array([[1860, 2015], [50,  280],  [1, 3],  [2.5, 4]]),
-    "AB":  np.array([[1860, 1978], [500, 2900], [5, 10], [2.5, 4]]),
+    "MFH": np.array([[1850, 2015], [105, 3800],  [1, 11], [2.3, 4.0]]),
+    "SFH": np.array([[1850, 2015], [35,  480],   [1, 4],  [2.3, 4.0]]),
+    "TH":  np.array([[1860, 2015], [35,  260],   [1, 4],  [2.3, 4.0]]),
+    "AB":  np.array([[1860, 1978], [455, 24000], [1, 20], [2.3, 4.0]]),
 }
+
+# Minimum average conditioned area per storey, in m².
+AREA_PER_STOREY = 35
+
+# Minimum dwelling count per typology.
+MIN_DWELLINGS = {"MFH": 3, "SFH": 1, "TH": 1, "AB": 13}
 
 
 def sample_buildings(building_type, bounds, n_samples, seed, criterion):
     """
     Generate LHS samples for a single building typology.
 
+    net_leased_area is drawn on the unit interval and mapped afterwards, so every
+    sample satisfies net_leased_area >= 35 x max(min dwellings, num_floors).
+
     Returns a DataFrame with columns:
         construction_year, net_leased_area, num_floors, floor_height, building_type
     """
-    sampler = LHS(ndim=bounds.shape[0], bounds=bounds, seed=seed, criterion=criterion)
+    sampler_bounds = bounds.copy()
+    sampler_bounds[1] = [0, 1]  # net_leased_area, mapped below
+
+    sampler = LHS(ndim=sampler_bounds.shape[0], bounds=sampler_bounds,
+                  seed=seed, criterion=criterion)
     samples = sampler.sample(nsamples=n_samples)
 
     # Discrete parameters rounded to nearest integer
     samples[:, 0] = np.round(samples[:, 0])  # construction_year
     samples[:, 2] = np.round(samples[:, 2])  # num_floors
+
+    # net_leased_area mapped onto the interval its storey count allows
+    area_min = AREA_PER_STOREY * np.maximum(MIN_DWELLINGS[building_type], samples[:, 2])
+    if area_min.max() > bounds[1, 1]:
+        sys.exit(f"{building_type}: the net_leased_area upper bound is below "
+                 f"{AREA_PER_STOREY} m² per storey at the maximum storey count.")
+    samples[:, 1] = area_min + samples[:, 1] * (bounds[1, 1] - area_min)
 
     # Continuous parameters rounded to one decimal place
     samples[:, 1] = np.round(samples[:, 1], decimals=1)  # net_leased_area
