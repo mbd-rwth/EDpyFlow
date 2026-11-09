@@ -24,6 +24,8 @@ import pandas as pd
 import numpy as np
 import logging
 import json
+import gzip
+import shutil
 import re
 import os
 import yaml
@@ -34,15 +36,19 @@ from time import perf_counter
 # Path to AixLib within the container
 AIXLIB_FILE = "/opt/AixLib/AixLib/package.mo"
 
+# Compression level for retained result files.
+COMPRESS_LEVEL = 1
+
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
-run_name        = config["run_name"]
-locations       = list(config["locations"].keys())
-stop_time       = config["simulation"]["duration_days"] * 86400
-intervals       = config["simulation"]["duration_days"] * 24 // config["simulation"]["timestep_hours"]
-keep_raw_output = config["simulation"].get("keep_raw_output", False)
-max_attempts    = config["simulation"].get("max_attempts", 3)
+run_name            = config["run_name"]
+locations           = list(config["locations"].keys())
+stop_time           = config["simulation"]["duration_days"] * 86400
+intervals           = config["simulation"]["duration_days"] * 24 // config["simulation"]["timestep_hours"]
+keep_raw_output     = config["simulation"].get("keep_raw_output", False)
+compress_raw_output = config["simulation"].get("compress_raw_output", False)
+max_attempts        = config["simulation"].get("max_attempts", 3)
 
 # A run counts as complete when its last output point is within one interval of stopTime.
 completion_tolerance = stop_time / intervals
@@ -64,6 +70,15 @@ logging.basicConfig(
     ],
 )
 logger = logging.getLogger(__name__)
+
+
+def compress_result_file(path):
+    """Replace a raw result file with its gzip."""
+    with open(path, "rb") as raw, \
+         gzip.open(f"{path}.gz", "wb", compresslevel=COMPRESS_LEVEL) as packed:
+        shutil.copyfileobj(raw, packed, length=1024 * 1024)
+    os.remove(path)
+
 
 samples = pd.read_csv(os.path.join(run_dir, "samples.csv"))
 
@@ -199,7 +214,10 @@ for location in locations:
 
             pd.DataFrame(failures).to_csv(failed_path, index=False)
 
-        if not keep_raw_output:
+        if keep_raw_output:
+            if compress_raw_output and os.path.exists(result_file):
+                compress_result_file(result_file)
+        else:
             for filename in os.listdir(temp_dir):
                 file_path = os.path.join(temp_dir, filename)
                 if os.path.isfile(file_path):
