@@ -36,8 +36,11 @@ for location in locations:
     with open(res_file, "r") as f:
         results = json.load(f)
 
-    for building_id, energy in results.items():
-        samples.loc[samples["id"] == int(building_id), "total_energy"] = energy
+    for building_id, result in results.items():
+        samples.loc[
+            samples["id"] == int(building_id),
+            "total_energy"
+        ] = result["total_energy"]
 
 os.makedirs(output_dir, exist_ok=True)
 samples.to_csv(os.path.join(output_dir, "dataset.csv"), index=False)
